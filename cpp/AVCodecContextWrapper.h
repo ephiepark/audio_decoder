@@ -11,6 +11,7 @@
 
 extern "C" {
 #include "libavcodec/avcodec.h"
+#include "libavformat/avformat.h"
 }
 
 
@@ -35,6 +36,10 @@ class AVCodecContextWrapper {
    * It will throw Exception when initialization fails.
    */
   void init(AVCodecParameters *codecpar);
+
+  void initEncode(
+    ::AVFormatContext *avFormatContext, enum AVCodecID codecId, int channels,
+    int sample_rate, int bit_rate);
 
   ::AVCodecContext* get() const;
 

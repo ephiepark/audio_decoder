@@ -1,12 +1,12 @@
 /**
- * This module decodes media container.
+ * This module encodes media container.
  */
 
 #pragma once
 
 #include "AVCodecContextWrapper.h"
 #include "AVFormatContextWrapper.h"
-#include "AVFrameProcessor.h"
+#include "AVFrameProducer.h"
 
 #include <memory>
 #include <vector>
@@ -14,28 +14,25 @@
 namespace ephiepark {
 namespace media_decode {
 
-class AVDecoder {
+class AVEncoder {
  public:
-  AVDecoder(): avFormatContextWrapper_(nullptr), avCodecContextWrappers_(0), avFrameProcessors_(0)  {}
-  // ~AVDecoder();
+  AVEncoder(): avFormatContextWrapper_(nullptr),
+      avCodecContextWrappers_(0), avFrameProducers_(0) {}
+  ~AVEncoder();
 
   void initWithFile(const std::string& filename);
 
-  void registerAVFrameProcessor(
-    int streamIdx,
-    std::unique_ptr<AVFrameProcessor>&& avFrameProcessor);
+  void registerAVFrameProducer(
+    std::unique_ptr<AVCodecContextWrapper>&& avCodecContextWrapper,
+    std::unique_ptr<AVFrameProducer>&& avFrameProducer);
 
   // Returns 0 on sucess < 0 on EOF
-  int decodeNextFrame();
-
-
- private:
-  void initCodecContextWrapper(int streamIdx);
+  int encodeNextFrame();
 
  private:
   std::unique_ptr<AVFormatContextWrapper> avFormatContextWrapper_;
   std::vector<std::unique_ptr<AVCodecContextWrapper>> avCodecContextWrappers_;
-  std::vector<std::unique_ptr<AVFrameProcessor>> avFrameProcessors_;
+  std::vector<std::unique_ptr<AVFrameProducer>> avFrameProducers_;
 };
 
 } /* namespace media_decode */

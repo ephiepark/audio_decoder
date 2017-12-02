@@ -37,10 +37,13 @@ class AVFormatContextWrapper {
    */
   void initWithFile(const std::string& filename);
 
+  void initWithFileEncode(const std::string& filename);
+
   ::AVFormatContext* get() const;
 
  private:
   ::AVFormatContext* avFormatContext_ = nullptr;
+  bool isEncode_ = false;
 };
 
 } /* namespace media_decode */

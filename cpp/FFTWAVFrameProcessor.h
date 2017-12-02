@@ -2,7 +2,7 @@
 
 #include "AVFrameProcessor.h"
 
-#include "DftR2CWrapper.h"
+#include "DftR2RWrapper.h"
 
 namespace ephiepark {
 namespace media_decode {
@@ -20,9 +20,12 @@ class FFTWAVFrameProcessor : public AVFrameProcessor {
  private:
   int inputSize_;
   int inputCount_;
-  double *in_;
-  double *out_;
-  fftw::DftR2CWrapper dftR2CWrapper_;
+  double *inForward_;
+  double *outForward_;
+  double *inBackward_;
+  double *outBackward_;
+  fftw::DftR2RWrapper dftR2RWrapperForward_;
+  fftw::DftR2RWrapper dftR2RWrapperBackward_;
 };
 
 } /* namespace media_decode */

@@ -51,7 +51,7 @@ void AVDecoder::registerAVFrameProcessor(
 
 int AVDecoder::decodeNextFrame() {
   static AVPacket avpkt;
-  static AVFrame *decodedFrame = av_frame_alloc();
+  static AVFrame decodedFrame;
 
   int error;
   char errorBuffer[ERROR_BUFFER_SIZE];
@@ -71,15 +71,12 @@ int AVDecoder::decodeNextFrame() {
     }
     while ((error = avcodec_receive_frame(
         avCodecContextWrappers_[avpkt.stream_index]->get(),
-        decodedFrame)
+        &decodedFrame)
       ) == 0
     ) {
-      avFrameProcessors_[avpkt.stream_index]->processNextAVFrame(decodedFrame);
+      avFrameProcessors_[avpkt.stream_index]->processNextAVFrame(&decodedFrame);
     }
     if (error != AVERROR(EAGAIN)) {
-      if (error == AVERROR_EOF) {
-        printf("AVERROR_EOF\n");
-      }
       get_error_text(error, errorBuffer);
       throw std::runtime_error(errorBuffer);
     }
