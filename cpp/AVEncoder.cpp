@@ -76,5 +76,9 @@ int AVEncoder::encodeNextFrame() {
   return 0;
 }
 
+AVFormatContext *AVEncoder::getAVFormatContext() {
+  return avFormatContextWrapper_->get();
+}
+
 } /* namespace media_decode */
 } /* namespace ephiepark */

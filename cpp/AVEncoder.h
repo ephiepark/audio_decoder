@@ -18,7 +18,6 @@ class AVEncoder {
  public:
   AVEncoder(): avFormatContextWrapper_(nullptr),
       avCodecContextWrappers_(0), avFrameProducers_(0) {}
-  ~AVEncoder();
 
   void initWithFile(const std::string& filename);
 
@@ -28,6 +27,8 @@ class AVEncoder {
 
   // Returns 0 on sucess < 0 on EOF
   int encodeNextFrame();
+
+  AVFormatContext *getAVFormatContext();
 
  private:
   std::unique_ptr<AVFormatContextWrapper> avFormatContextWrapper_;

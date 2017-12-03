@@ -6,24 +6,28 @@ namespace ephiepark {
 namespace media_decode {
 
 FFTWAVFrameProcessor::FFTWAVFrameProcessor(
-  int inputSize
-): inputSize_(inputSize), dftR2RWrapperForward_(inputSize, true),
-    dftR2RWrapperBackward_(inputSize, false) {
+  int inputSize, std::string filename
+): inputSize_(inputSize), os_(filename, std::ofstream::binary), dftR2RWrapperForward_(inputSize, true) {
   inForward_ = (double *) malloc(sizeof(double) * inputSize_);
   outForward_ = (double *) malloc(sizeof(double) * inputSize_);
-  inBackward_ = (double *) malloc(sizeof(double) * inputSize_);
-  outBackward_ = (double *) malloc(sizeof(double) * inputSize_);
   inputCount_ = 0;
 }
 
 FFTWAVFrameProcessor::~FFTWAVFrameProcessor() {
   free(inForward_);
   free(outForward_);
-  free(inBackward_);
-  free(outBackward_);
+  os_.close();
 }
 
 void FFTWAVFrameProcessor::processNextAVFrame(AVFrame *avFrame) {
+  static bool isFirst = true;
+  if (isFirst) {
+    isFirst = false;
+    FFTWMetaData fftwMetaData;
+    fftwMetaData.sampleRate = avFrame->sample_rate;
+    fftwMetaData.windowSize = inputSize_;
+    os_.write((char *)&fftwMetaData, sizeof(FFTWMetaData));
+  }
   for (int i = 0; i < avFrame->nb_samples; i++) {
     // Considering only one channel for now
     inForward_[inputCount_] = (double) *((short *) avFrame->data[0]+i);
@@ -34,29 +38,11 @@ void FFTWAVFrameProcessor::processNextAVFrame(AVFrame *avFrame) {
   }
 }
 
+// TODO somehow need to be called one more at the end
 void FFTWAVFrameProcessor::process() {
   inputCount_ = 0;
   dftR2RWrapperForward_.process(inForward_, outForward_);
-
-  /*
-  inBackward_[0] = outForward_[0];
-  for (int i = 1; i < inputSize_ / 2; i++) {
-    inBackward_[i] = sqrt(outForward_[i] * outForward_[i] + outForward_[inputSize_ - i] * outForward_[inputSize_ - i]);
-  }
-  for (int i = inputSize_ / 2; i < inputSize_; i++) {
-    inBackward_[i] = 0;
-  }
-  dftR2RWrapperBackward_.process(inBackward_, outBackward_);
-
-  for (int i = 0; i < inputSize_ / 2; i++) {
-    std::cout << inForward_[i] << " " << outBackward_[i] / inputSize_ << std::endl;
-  }
-  std::cout << std::endl;
-  */
-  for (int i = 1; i < inputSize_ / 2; i++) {
-    std::cout << outForward_[i] << " " << outForward_[inputSize_ - i] << std::endl;
-  }
-
+  os_.write((char *) outForward_, sizeof(double) * inputSize_);
 }
 
 } /* namespace media_decode */

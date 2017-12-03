@@ -1,15 +1,18 @@
 #pragma once
 
+#include <fstream>
+
 #include "AVFrameProcessor.h"
 
 #include "DftR2RWrapper.h"
+#include "Util.h"
 
 namespace ephiepark {
 namespace media_decode {
 
 class FFTWAVFrameProcessor : public AVFrameProcessor {
  public:
-  FFTWAVFrameProcessor(int inputSize);
+  FFTWAVFrameProcessor(int inputSize, std::string filename);
   ~FFTWAVFrameProcessor();
 
   virtual void processNextAVFrame(AVFrame *);
@@ -18,14 +21,12 @@ class FFTWAVFrameProcessor : public AVFrameProcessor {
   void process();
 
  private:
+  std::ofstream os_;
   int inputSize_;
   int inputCount_;
   double *inForward_;
   double *outForward_;
-  double *inBackward_;
-  double *outBackward_;
   fftw::DftR2RWrapper dftR2RWrapperForward_;
-  fftw::DftR2RWrapper dftR2RWrapperBackward_;
 };
 
 } /* namespace media_decode */
