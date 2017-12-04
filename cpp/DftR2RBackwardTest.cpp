@@ -1,3 +1,5 @@
+#include <iostream>
+
 #include "AVEncoder.h"
 #include "FFTWAVFrameProducer.h"
 #include "AVCodecContextWrapper.h"
@@ -19,8 +21,12 @@ int main(int argc, char **argv)
     auto encoder = std::make_unique<ephiepark::media_decode::AVEncoder>();
     encoder->initWithFile(outfile);
 
-    // TODO
-    avCodecContextWrapper->initEncode(encoder->getAVFormatContext(), AV_CODEC_ID_MP2, 1, 44100, 44100);
+    avCodecContextWrapper->initEncode(
+      encoder->getAVFormatContext(),
+      AV_CODEC_ID_MP2,
+      1 /* channels */,
+      producer->getSampleRate(),
+      96000 /* bit rate kbits/s */);
     encoder->registerAVFrameProducer(std::move(avCodecContextWrapper), std::move(producer));
     while (encoder->encodeNextFrame() == 0) {}
     return 0;

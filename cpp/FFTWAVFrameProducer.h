@@ -16,14 +16,24 @@ class FFTWAVFrameProducer : public AVFrameProducer {
   ~FFTWAVFrameProducer();
 
   virtual int produceNextAVFrame(AVFrame *);
+  virtual void setFrameSize(int frameSize);
+
+  int getSampleRate();
+
+ private:
+  int fillFrameBuffer();
 
  private:
   std::ifstream is_;
   FFTWMetaData fftwMetaData_;
   double* inBuffer_;
   double* outBuffer_;
-  uint8_t* sampleBuffer_;
-  fftw::DftR2RWrapper dftR2RWrapperBackward_;
+  int16_t* sampleBuffer_;
+  int16_t* frameBuffer_;
+  int sampleLeft_;
+  int frameBufferSize_;
+  int frameSize_;
+  std::unique_ptr<fftw::DftR2RWrapper> dftR2RWrapperBackward_;
 };
 
 } /* namespace media_decode */

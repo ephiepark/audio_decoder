@@ -22,6 +22,7 @@ class AVFrameProducer {
 
   // Returns 0 on sucess < 0 on EOF
   virtual int produceNextAVFrame(AVFrame *) = 0;
+  virtual void setFrameSize(int frameSize) = 0;
 };
 
 } /* namespace media_decode */

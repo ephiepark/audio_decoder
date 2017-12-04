@@ -1,6 +1,7 @@
 #include "AVDecoder.h"
 
 #include <stdexcept>
+#include <iostream>
 
 namespace ephiepark {
 namespace media_decode {
@@ -56,19 +57,27 @@ int AVDecoder::decodeNextFrame() {
   int error;
   char errorBuffer[ERROR_BUFFER_SIZE];
 
+  int isFinished = 0;
+
   if ((error = av_read_frame(avFormatContextWrapper_->get(), &avpkt)) < 0) {
     // Currently, assuming that there won't be an error other than EOF
-    return error;
+    isFinished = -1;
   }
   if (avFrameProcessors_[avpkt.stream_index]) {
-    if ((error = avcodec_send_packet(
-        avCodecContextWrappers_[avpkt.stream_index]->get(),
-        &avpkt)
-      ) < 0
-    ) {
+    if (isFinished == 0) {
+      error = avcodec_send_packet(
+          avCodecContextWrappers_[avpkt.stream_index]->get(),
+          &avpkt);
+    } else {
+      error = avcodec_send_packet(
+          avCodecContextWrappers_[avpkt.stream_index]->get(),
+          nullptr);
+    }
+    if (error < 0) { // && error != AVERROR_EOF) {
       get_error_text(error, errorBuffer);
       throw std::runtime_error(errorBuffer);
     }
+
     while ((error = avcodec_receive_frame(
         avCodecContextWrappers_[avpkt.stream_index]->get(),
         &decodedFrame)
@@ -76,12 +85,15 @@ int AVDecoder::decodeNextFrame() {
     ) {
       avFrameProcessors_[avpkt.stream_index]->processNextAVFrame(&decodedFrame);
     }
-    if (error != AVERROR(EAGAIN)) {
+    if (isFinished < 0) {
+      avFrameProcessors_[avpkt.stream_index]->processNextAVFrame(nullptr);
+    }
+    if (error < 0 && error != AVERROR(EAGAIN) && error != AVERROR_EOF) {
       get_error_text(error, errorBuffer);
       throw std::runtime_error(errorBuffer);
     }
   }
-  return 0;
+  return isFinished;
 }
 
 } /* namespace media_decode */

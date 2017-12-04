@@ -14,8 +14,12 @@ FFTWAVFrameProcessor::FFTWAVFrameProcessor(
 }
 
 FFTWAVFrameProcessor::~FFTWAVFrameProcessor() {
-  free(inForward_);
-  free(outForward_);
+  if (inForward_) {
+    free(inForward_);
+  }
+  if (outForward_) {
+    free(outForward_);
+  }
   os_.close();
 }
 
@@ -28,20 +32,28 @@ void FFTWAVFrameProcessor::processNextAVFrame(AVFrame *avFrame) {
     fftwMetaData.windowSize = inputSize_;
     os_.write((char *)&fftwMetaData, sizeof(FFTWMetaData));
   }
-  for (int i = 0; i < avFrame->nb_samples; i++) {
-    // Considering only one channel for now
-    inForward_[inputCount_] = (double) *((short *) avFrame->data[0]+i);
-    inputCount_++;
-    if (inputCount_ == inputSize_) {
-      process();
+  if (avFrame) {
+    for (int i = 0; i < avFrame->nb_samples; i++) {
+      // Considering only one channel for now
+      inForward_[inputCount_] = (double) *((short *) avFrame->data[0]+i);
+      inputCount_++;
+      if (inputCount_ == inputSize_) {
+        process();
+      }
     }
+  } else {
+    for (inputCount_; inputCount_ < inputSize_; inputCount_++) {
+      inForward_[inputCount_] = 0;
+    }
+    process();
   }
 }
 
-// TODO somehow need to be called one more at the end
 void FFTWAVFrameProcessor::process() {
   inputCount_ = 0;
+
   dftR2RWrapperForward_.process(inForward_, outForward_);
+
   os_.write((char *) outForward_, sizeof(double) * inputSize_);
 }
 

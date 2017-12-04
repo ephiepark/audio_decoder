@@ -1,6 +1,7 @@
 #include "AVEncoder.h"
 
 #include <stdexcept>
+#include <iostream>
 
 namespace ephiepark {
 namespace media_decode {
@@ -29,6 +30,7 @@ void AVEncoder::registerAVFrameProducer(
   std::unique_ptr<AVCodecContextWrapper>&& avCodecContextWrapper,
   std::unique_ptr<AVFrameProducer>&& avFrameProducer
 ) {
+  avFrameProducer->setFrameSize(avCodecContextWrapper->get()->frame_size);
   avCodecContextWrappers_.emplace_back(std::move(avCodecContextWrapper));
   avFrameProducers_.emplace_back(std::move(avFrameProducer));
 }
@@ -36,22 +38,24 @@ void AVEncoder::registerAVFrameProducer(
 int AVEncoder::encodeNextFrame() {
   static AVPacket encodedAvpkt;
   static AVFrame frame;
-  static auto avFrameProducerIt = avFrameProducers_.begin();
+  static int curProducerId = 0;
 
   int error;
   char errorBuffer[ERROR_BUFFER_SIZE];
 
-  encodedAvpkt.stream_index = avFrameProducerIt - avFrameProducers_.begin();
+  encodedAvpkt.stream_index = curProducerId;
 
-  if ((*avFrameProducerIt)->produceNextAVFrame(&frame) < 0) {
-    if (avFrameProducerIt == avFrameProducers_.end()) {
+  auto avFrameProducerIt = avFrameProducers_.begin() + curProducerId;
+
+  while ((*avFrameProducerIt)->produceNextAVFrame(&frame) < 0) {
+    if (curProducerId == avFrameProducers_.size()) {
       if ((error = av_write_trailer(avFormatContextWrapper_->get())) < 0) {
         get_error_text(error, errorBuffer);
         throw std::runtime_error(errorBuffer);
       }
       return -1;
     } else {
-      avFrameProducerIt++;
+      curProducerId++;
     }
   }
   if ((error = avcodec_send_frame(
